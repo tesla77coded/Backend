@@ -1,7 +1,10 @@
 import 'dotenv/config';
 import express from 'express';
 import mongoose from 'mongoose';
-import userRoutes from './routes/userRoutes.js'
+import userRoutes from './routes/userRoutes.js';
+import productRoutes from './routes/productRoutes.js';
+import orderRoutes from './routes/orderRoutes.js';
+import { notFound, errorHandler } from './middleware/errorHandler.js';
 
 const app = express();
 app.use(express.json());
@@ -26,6 +29,11 @@ app.get(('/'), (req, res) => {
 
 //mount API routes
 app.use('/api/users', userRoutes);
+app.use('/api/products', productRoutes);
+app.use('/api/orders', orderRoutes);
+
+app.use(notFound);
+app.use(errorHandler);
 
 
 connectDB().then(() => {
