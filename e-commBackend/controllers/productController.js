@@ -22,6 +22,65 @@ const getProducts = asyncHandler(async (req, res) => {
   res.json({ products, page, pages: Math.ceil(count / pageSize) });
 });
 
+const getProductByQuery = asyncHandler(async (req, res) => {
+  const queryObj = {};
+
+  // Category filter
+  if (req.query.category) {
+    queryObj.category = req.query.category;
+  }
+
+  // In-stock filter
+  if (req.query.inStock) {
+    const inStock = req.query.inStock === 'true';
+    queryObj.countInStock = inStock ? { $gt: 0 } : 0;
+  }
+
+  // Price range filter
+  if (req.query.price) {
+    const priceFilter = {};
+    if (req.query.price.gte) priceFilter.$gte = Number(req.query.price.gte);
+    if (req.query.price.lte) priceFilter.$lte = Number(req.query.price.lte);
+    if (Object.keys(priceFilter).length > 0) {
+      queryObj.price = priceFilter;
+    }
+  }
+
+  //pagination paramerters
+  const page = Number(req.query.page) || 1;
+  const limit = Number(req.query.limit) || 10;
+  const skip = (page - 1) * limit;
+
+  // Base query
+  let query = Product.find(queryObj);
+
+  // Sorting
+  if (req.query.sort) {
+    const sortKey = req.query.sort.split('_')[0];
+    const sortOrder = req.query.sort.includes('_desc') ? -1 : 1;
+    query = query.sort({ [sortKey]: sortOrder });
+  }
+
+  // count for metadata
+  const totalItems = await Product.countDocuments(queryObj);
+
+  // apply pagination
+  const products = await query.skip(skip).limit(limit);
+
+
+  // Response
+  if (products.length > 0) {
+    res.status(200).json({
+      products,
+      totalItems,
+      totalPages: Math.ceil(totalItems / limit),
+      currentPage: page,
+    });
+  } else {
+    res.status(404);
+    throw new Error('Products not found.');
+  }
+});
 
 const getProductById = asyncHandler(async (req, res) => {
   const prodId = req.params.id;
@@ -125,4 +184,4 @@ const deleteProduct = asyncHandler(async (req, res) => {
   }
 });
 
-export { getProducts, getProductById, createProduct, updateProduct, deleteProduct, createProductReview, getTopProducts }
+export { getProducts, getProductById, createProduct, updateProduct, deleteProduct, createProductReview, getTopProducts, getProductByQuery };

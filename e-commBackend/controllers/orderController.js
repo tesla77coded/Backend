@@ -1,16 +1,46 @@
 import asyncHandler from "../utils/asyncHandler.js";
 import Order from "../models/orderModel.js";
+import Product from '../models/productModel.js';
 
 const addOrderItems = asyncHandler(async (req, res) => {
+
+  const { orderItems, shippingAddress, paymentMethod } = req.body;
+
+  if (!orderItems || orderItems.length === 0) {
+    res.status(400);
+    throw new Error('No items ordered.');
+  };
+
+  // calculate itemPrice
+  let itemPrice = 0;
+  const validatedItems = [];
+
+  for (const item of orderItems) {
+    const product = await Product.findById(item.productId);
+    if (!product) {
+      res.status(404);
+      throw new Error(`Product not found: ${item.productId}`);
+    };
+
+    const singleItemTotal = product.price * item.qty;
+    itemPrice += singleItemTotal;
+
+    validatedItems.push({
+      name: product.name,
+      qty: item.qty,
+      image: product.image,
+      price: product.price,
+      product: product._id,
+    });
+  };
+
+  const taxPrice = parseFloat((itemPrice * 0.18).toFixed(2));
+  const shippingPrice = itemPrice > 1000 ? 0 : 100;
+  const totalPrice = parseFloat((itemPrice + taxPrice + shippingPrice).toFixed(2));
+
   const order = new Order({
     user: req.user._id,
-    orderItems: req.body.orderItems.map(item => ({
-      name: item.name,
-      qty: item.qty,
-      image: item.image,
-      price: item.price,
-      product: item.productId
-    })),
+    orderItems: validatedItems,
     shippingAddress: req.body.shippingAddress,
     paymentMethod: req.body.paymentMethod,
     itemPrice: req.body.itemPrice,
@@ -20,7 +50,7 @@ const addOrderItems = asyncHandler(async (req, res) => {
     // isPaid, paidAt, isDelivered, deliveredAt will use defaults or be set later
   });
 
-  const createdOrder = await Order.save();
+  const createdOrder = await order.save();
   return res.status(201).json(createdOrder);
 });
 
