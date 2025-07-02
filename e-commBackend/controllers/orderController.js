@@ -41,12 +41,17 @@ const addOrderItems = asyncHandler(async (req, res) => {
   const order = new Order({
     user: req.user._id,
     orderItems: validatedItems,
-    shippingAddress: req.body.shippingAddress,
-    paymentMethod: req.body.paymentMethod,
-    itemPrice: req.body.itemPrice,
-    shippingPrice: req.body.shippingPrice,
-    taxPrice: req.body.taxPrice,
-    totalPrice: req.body.totalPrice,
+    shippingAddress,
+    paymentMethod,
+    itemPrice,
+    taxPrice,
+    totalPrice,
+    shippingAddress,
+    paymentMethod,
+    itemPrice,
+    taxPrice,
+    shippingPrice,
+    totalPrice,
     // isPaid, paidAt, isDelivered, deliveredAt will use defaults or be set later
   });
 

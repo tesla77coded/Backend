@@ -11,13 +11,13 @@ router.route('/')
 
 router.get('/top', getTopProducts);
 
-router.route(':/id')
+router.route('/:id')
   .get(getProductById)
 
   .put(protect, admin, updateProduct)
   .put(protect, admin, deleteProduct)
 
-router.route(':/id/reviews')
+router.route('/:id/reviews')
   .post(protect, createProductReview)
 
 
